@@ -48,13 +48,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- MOTOR DE IA ---
-@st.cache_resource
 def encontrar_melhor_modelo():
     if not minha_chave:
         return None
     url = f"https://generativelanguage.googleapis.com/v1beta/models?key={minha_chave}"
     try:
-        res = requests.get(url).json()
+        res = requests.get(url, timeout=10).json()
+        if 'error' in res:
+            return None
         modelos = [m['name'] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
         for pref in ['2.0-flash', '1.5-flash', 'flash', 'pro']:
             for m in modelos:
@@ -65,17 +66,25 @@ def encontrar_melhor_modelo():
         return None
 
 def chamar_ia(prompt, modelo):
-    if not minha_chave or not modelo:
-        return "Erro: Chave de API não configurada."
+    if not minha_chave:
+        return "Erro: Chave de API não configurada nos Secrets do Streamlit."
+    if not modelo:
+        modelo_teste = encontrar_melhor_modelo()
+        if not modelo_teste:
+            return "Erro: Nenhum modelo disponível. Verifique sua chave de API."
+        modelo = modelo_teste
     url = f"https://generativelanguage.googleapis.com/v1beta/{modelo}:generateContent?key={minha_chave}"
     prompt_final = (f"{prompt} REGRAS: Inicie o texto diretamente. Use linguagem acadêmica e impessoal. "
                     f"IMPORTANTE: Se usar citações, ao final do texto, escreva a tag [REFS] e coloque as referências completas em ABNT.")
     corpo = {"contents": [{"parts": [{"text": prompt_final}]}]}
     try:
-        res = requests.post(url, headers={'Content-Type': 'application/json'}, data=json.dumps(corpo))
-        return res.json()['candidates'][0]['content']['parts'][0]['text']
-    except:
-        return "Erro na conexão com a IA."
+        res = requests.post(url, headers={'Content-Type': 'application/json'}, data=json.dumps(corpo), timeout=30)
+        data = res.json()
+        if 'error' in data:
+            return f"Erro da API: {data['error'].get('message', 'Erro desconhecido')}"
+        return data['candidates'][0]['content']['parts'][0]['text']
+    except Exception as e:
+        return f"Erro na conexão com a IA: {str(e)}"
 
 def processar_refs(resposta):
     meses = ["jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez."]
@@ -103,8 +112,8 @@ def init_state():
             "referencial": "", "metodologia": "", "resultados": "",
             "conclusao": "", "referencias": "", "titulo_secao_2": "REFERENCIAL TEÓRICO"
         }
-    if 'modelo' not in st.session_state:
-        st.session_state.modelo = encontrar_melhor_modelo()
+    # Sempre busca o modelo atualizado (sem cache)
+    st.session_state.modelo = encontrar_melhor_modelo()
     if 'texto_gerado' not in st.session_state:
         st.session_state.texto_gerado = {}
 
