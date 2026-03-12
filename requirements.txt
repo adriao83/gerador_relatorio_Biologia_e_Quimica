@@ -1,4 +1,2 @@
-# Bibliotecas do Gerador de Relatório (adicione estas)
-fluxo de luz
-solicitações
+requests
 python-docx
