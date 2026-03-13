@@ -57,7 +57,7 @@ def encontrar_melhor_modelo():
         if 'error' in res:
             return None
         modelos = [m['name'] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
-        for pref in ['2.0-flash', '1.5-flash', 'flash', 'pro']:
+        for pref in ['2.5-flash', '1.5-flash', 'flash', 'pro']:
             for m in modelos:
                 if pref in m:
                     return m
