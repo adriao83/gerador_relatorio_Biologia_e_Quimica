@@ -19,6 +19,12 @@ st.set_page_config(
 )
 
 # --- CHAVE DE API ---
+# Prioridade: 1) digitada pelo usuário, 2) variável de ambiente
+def get_chave():
+    if 'api_key_usuario' in st.session_state and st.session_state.api_key_usuario:
+        return st.session_state.api_key_usuario
+    return os.environ.get("GEMINI_API_KEY", "")
+
 minha_chave = os.environ.get("GEMINI_API_KEY", "")
 
 # --- ESTILO CSS ---
@@ -57,23 +63,26 @@ def encontrar_melhor_modelo():
         if 'error' in res:
             return None
         modelos = [m['name'] for m in res.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
-        for pref in ['2.5-flash', '1.5-flash', 'flash', 'pro']:
+        # Prefere gemini-2.5-flash que tem cota disponivel
+        for pref in ['2.5-flash', '1.5-flash', '1.5-pro', 'gemini-pro', 'flash', 'pro']:
             for m in modelos:
-                if pref in m:
+                if pref in m and 'vision' not in m and 'embed' not in m:
                     return m
         return modelos[0] if modelos else None
     except:
         return None
 
 def chamar_ia(prompt, modelo):
-    if not minha_chave:
-        return "Erro: Chave de API não configurada nos Secrets do Streamlit."
+    chave_atual = get_chave()
+    if not chave_atual:
+        return "Erro: Cole sua chave de API do Google Gemini para usar o assistente."
+    minha_chave = chave_atual
     if not modelo:
         modelo_teste = encontrar_melhor_modelo()
         if not modelo_teste:
             return "Erro: Nenhum modelo disponível. Verifique sua chave de API."
         modelo = modelo_teste
-    url = f"https://generativelanguage.googleapis.com/v1beta/{modelo}:generateContent?key={minha_chave}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/{modelo}:generateContent?key={chave_atual}"
     prompt_final = (f"{prompt} REGRAS: Inicie o texto diretamente. Use linguagem acadêmica e impessoal. "
                     f"IMPORTANTE: Se usar citações, ao final do texto, escreva a tag [REFS] e coloque as referências completas em ABNT.")
     corpo = {"contents": [{"parts": [{"text": prompt_final}]}]}
@@ -281,9 +290,34 @@ def gerar_word(dados):
 # --- INTERFACE ---
 st.markdown('<div class="header-ufam"><h2>🎓 Assistente de Relatório de Estágio — UFAM/INC</h2><p>Licenciatura em Ciências: Biologia e Química</p></div>', unsafe_allow_html=True)
 
-# Aviso se sem chave
-if not minha_chave:
-    st.error("⚠️ Chave de API não configurada! Vá em Settings > Secrets no Streamlit Cloud e adicione GEMINI_API_KEY.")
+# --- CAMPO DE CHAVE DE API ---
+chave_env = os.environ.get("GEMINI_API_KEY", "")
+if not chave_env:
+    with st.expander("🔑 Configure sua Chave de API do Google Gemini", expanded=True):
+        st.markdown("""
+        **Como obter sua chave gratuita:**
+        1. Acesse 👉 [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+        2. Faça login com seu Gmail
+        3. Clique em **"Create API Key"**
+        4. Copie a chave gerada e cole abaixo
+        """)
+        chave_digitada = st.text_input(
+            "Cole sua chave aqui:",
+            type="password",
+            placeholder="AIzaSy...",
+            help="Sua chave é usada apenas nesta sessão e não é armazenada."
+        )
+        if chave_digitada:
+            st.session_state.api_key_usuario = chave_digitada
+            minha_chave = chave_digitada
+            st.session_state.modelo = encontrar_melhor_modelo()
+            st.success("✓ Chave configurada! Pode usar o assistente.")
+        else:
+            st.warning("⚠️ Cole sua chave acima para usar o assistente.")
+else:
+    minha_chave = chave_env
+    if 'api_key_usuario' not in st.session_state:
+        st.session_state.api_key_usuario = chave_env
 
 # --- ABAS ---
 aba_capa, aba_resumo, aba_intro, aba_ref, aba_met, aba_result, aba_consid, aba_word = st.tabs([
