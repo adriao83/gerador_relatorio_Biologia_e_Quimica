@@ -1,4 +1,4 @@
-# Assistente de Relatório de Estágio — UFAM/INC
+# Relaxa Vagabundo(a) esse Assistente de Relatório de Estágio Vai te salvar ☺️
 
 Gerador de relatório acadêmico com IA (Google Gemini) para o curso de Licenciatura em Ciências: Biologia e Química.
 
