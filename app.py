@@ -13,7 +13,7 @@ import io
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
-    page_title="Assistente de Estágio UFAM",
+    page_title="Relaxa bbzinho esse Assistente de Estágio vai te salvar ☺️",
     page_icon="🎓",
     layout="wide"
 )
