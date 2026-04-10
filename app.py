@@ -288,7 +288,7 @@ def gerar_word(dados):
     return buf
 
 # --- INTERFACE ---
-st.markdown('<div class="header-ufam"><h2>🎓 Relaxa bbzinho! essa IA vai te salvar</h2><p>CLCBQ!por Amor! esse é um presente para os meus caros colegas. tmj!</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="header-ufam"><h2>🎓 Relaxa bbzinho! essa IA vai te salvar!!</h2><p>CLCBQ! por Amor! esse é um presente para os meus caros colegas de estagio. tmj! att: sr_vngls_adrião</p></div>', unsafe_allow_html=True)
 
 # --- CAMPO DE CHAVE DE API ---
 chave_env = os.environ.get("GEMINI_API_KEY", "")
